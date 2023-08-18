@@ -1,0 +1,15 @@
+# referemce: https://kubernetes.io/docs/concepts/services-networking/service/
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      nodePort: {{ .Values.service.nodePort }} # Range: 30000-32767
+  selector:
+    app: {{ .Values.pod.name }}
+    type: {{ .Values.pod.type }}
