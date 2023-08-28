@@ -77,3 +77,48 @@ rolling updates and rollbacks
 en/decoding secret keys
 - `echo -n <value> | base64`: encode (caution!! not encrypted!)
 - `echo -n <encoded value> | base64 --decode`: decode
+- `k get secrets -A -o json | k replace -f -`: replace all secrets into new schema
+
+kubeapi-server
+- `crictl pods`
+
+config
+- `k config view`
+- `k config use-context <cluster name>`
+- `k describe pod <kube-apiserver pod name> -n kube-system`: to check out wether external etcd
+- `vi /etc/systemd/system/ectd.service` : in container change datadir + `systemctl daemon-reload` + `systemctl restart etcd`
+
+Certificate Authority create (via OpenSSL)
+
+**CA**
+- `openssl genrsa -out ca.key 2048`: generate keys
+- `openssl req -new -key ca.key -subj "/CN=KUBERNETES-CA" -out ca.csr`: generate Certificate Signing Request (CSR)
+- `openssl x509 -req -in ca.csr -signkey ca.key -out ca.crt`: generate signed certificate (CA)
+
+**admin**
+- `openssl req -new -key admin.key -subj "/CN=kube-admin/O=system:masters" -out admin.csr`: generate Certificate Signing Request (CSR)
+- `openssl x509 -req -in admin.csr -CA ca.crt -CAKey ca.key -out admin.crt`: generate signed certificate (client or admin)
+
+**kube api server**
+- `openssl req -new -key admin.key -subj "/CN=kube-apiserver" -out apiserver.csr -config openssl.cnf`: generate Certificate Signing Request (CSR)
+```
+[req]
+req_extension = v3_req
+distinguished_name = req_distinguished_name
+[v3_req]
+basicConstraints= CA:FALSE
+keyUsage = nonRepudiation
+sujectAltName = @alt_names
+[alt_names]
+DNS.1 = kubernates
+DNS.2 = kubernates.default
+DNS.3 = kubernates.default.svc
+DNS.4 = kubernates.default.svc.cluster.local
+IP.1 = 10.96.0.1
+IP.2 = 172.17.0.87
+```
+
+Logging
+- `openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout`: to veiw cert file
+- `journalctl -u etcd.service -l`: inspect service logs
+- `ps -ef`: logging processing apps
