@@ -11,6 +11,7 @@ rs|replicaset
 svc|service
 ns|namepsaces
 cm|configmap
+sa|serviceaccounts
 
 
 
@@ -122,3 +123,39 @@ Logging
 - `openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout`: to veiw cert file
 - `journalctl -u etcd.service -l`: inspect service logs
 - `ps -ef`: logging processing apps
+
+
+kube-CSR
+- `cat <csr filename> | base64 -w 0`: create base64 encoded content
+```
+---
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: akshay
+spec:
+  groups:
+  - system:authenticated
+  request: <Paste the base64 encoded value of the CSR file>
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - client auth
+``` 
+- `k get csr`: get csr list
+- `k certificate approve akshay`: approve CSR request
+
+config
+- `k config view`
+- `k config --kubeconfig=<config path> [CMD]`
+
+RBAC(Role Based Access Controls)
+- `k get roles`
+- `k get rolebindings`
+- `k describe role developer`
+- `k auth can-i create deployments (--as <user>)`: check access
+- `k auth can-i delete nodes`: check access
+- `/var/rabc`: role & rolebinding config files
+
+service account
+- `k create token <service account>`
+- `https://jwt.io/`: to see token contents
