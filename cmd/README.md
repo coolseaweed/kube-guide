@@ -12,6 +12,8 @@ svc|service
 ns|namepsaces
 cm|configmap
 sa|serviceaccounts
+pv|persistentvolumes
+pvc|persistentvolumeclaims
 
 
 
@@ -159,3 +161,62 @@ RBAC(Role Based Access Controls)
 service account
 - `k create token <service account>`
 - `https://jwt.io/`: to see token contents
+
+
+container user check
+- `k exec <container name> -- whoami`
+
+persist volume
+- `k get pv[c]`
+
+network
+- `ip a`: to see list of ips
+- `ip link`: to list an modify interfaces on the host
+- `ip addr`: to see the IP addresses assigned to those interfaces
+- `ip addr add <addr 1> <addr 2> ..`
+- `route / ip route`: to view routing table
+- `ip route add <source ip> via <dest ip>`: to add entries into the 
+- `ip netns add <namespace>`: to add network namespace
+- `ip netns exec <namespace> link` == `ip -n red link`
+- `netstat -plnt`
+- `ip link show <interface>`
+- `ip route show`: to see route tables
+- `netstat -nplt`: to see container's listening ports
+- `ip address show type bridge`: to see only bridge type ip address
+ARP
+- `arp`: to see ARP table
+
+routing table
+- `cat /proc/sys/net/ipv4/ip_forward`: set the value into 1
+- `cat /etc/hosts`: to see name resolution
+- `/etc/resolv.conf`: DNS resolution config file
+```
+nameserver <dns ip address>
+nameserver 8.8.8.8 # allow well-known public nameserver like google.com
+```
+- `/etc/nsswitch.conf`: config search order for DNS
+
+**above commands only valid untill restart. If you want to persist these changes, edit `/etc/network/interfaces` file**
+
+DNS check tools
+- `nslookup www.google.com`
+- `dig www.google.com`
+
+
+CNI solution steps
+- 1. `ip link add v-net-0 type bridge`: create bridge network
+- 2. `ip link set dev v-net-0 up`: set to UP bridge network
+- 3. `ip addr add 192.168.1.0/24 dev v-net-0`: set any ip address for bridge interface
+- 4. `ip link add veth-red type veth peer name veth-red-br`
+- 5. `ip link set veth-red netns red`
+- 6. `ip -n red addr add 192.168.15.1 dev veth-red`
+- 7. `ip -n red link set veth-red up`
+- 8. `ip link set veth-red-br master v-net-0`
+- 9. `ip netns exec blue ip route add 192.168.1.0/24 via 192.168.15.5`
+- 10. `iptables -t nat -A POSTROUTING -s 192.168.1.0/24 -j MASQUERADE`
+
+- `/etc/cni/net.d/10-flannel.conflist`: CNI config
+- `/opt/cni/bin`: CNI lists
+
+CoreDNS
+- `cat /etc/coredns/Corefile`
